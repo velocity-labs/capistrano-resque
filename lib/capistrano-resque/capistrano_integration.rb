@@ -49,9 +49,16 @@ module CapistranoResque
         def stop_command
           "if [ -e #{current_path}/tmp/pids/resque_work_1.pid ]; then \
            for f in `ls #{current_path}/tmp/pids/resque_work*.pid`; \
-             do kill -s #{resque_kill_signal} `cat $f` \
-             && rm $f ;done \
-           ;fi"
+              do \
+                if kill -0 `cat $f`> /dev/null 2>&1; then \
+                  #{try_sudo} kill -s #{resque_kill_signal} `cat $f` \
+                  && rm $f \
+                ;else \
+                  echo 'Resque was not running, cleaning up stale PID file' \
+                  && rm $f \
+                ;fi \
+              ;done \
+            ;fi"
         end
 
         def status_scheduler
